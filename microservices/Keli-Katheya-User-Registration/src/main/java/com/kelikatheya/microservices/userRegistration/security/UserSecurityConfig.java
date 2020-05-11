@@ -1,5 +1,6 @@
 package com.kelikatheya.microservices.userRegistration.security;
 
+import com.kelikatheya.microservices.userRegistration.constants.UserConstants;
 import com.kelikatheya.microservices.userRegistration.services.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.AutoConfigureOrder;
@@ -31,11 +32,11 @@ public class UserSecurityConfig extends WebSecurityConfigurerAdapter {
         http.csrf().disable();
         http.authorizeRequests().antMatchers("/**").permitAll()
                 .and()
-                .addFilter(getAuhtenticationFilter());
+                .addFilter(getAuthenticationFilter());
     }
-    private AuthenticationFilter getAuhtenticationFilter() throws Exception {
+    private AuthenticationFilter getAuthenticationFilter() throws Exception {
         AuthenticationFilter authenticationFilter = new AuthenticationFilter(userService , environment , authenticationManager());
-        authenticationFilter.setFilterProcessesUrl(environment.getProperty("authenticate.url"));
+        authenticationFilter.setFilterProcessesUrl(UserConstants.LoginURL);
         return  authenticationFilter;
     }
 

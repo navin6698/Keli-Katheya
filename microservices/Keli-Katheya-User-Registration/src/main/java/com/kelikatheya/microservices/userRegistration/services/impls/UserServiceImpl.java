@@ -8,6 +8,7 @@ import com.kelikatheya.microservices.userRegistration.services.UserService;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -27,6 +28,9 @@ public class UserServiceImpl implements UserService {
     @Autowired
     UserRepository userRepository;
 
+    @Autowired
+    private MongoTemplate mongoTemplate;
+
     @Override
     public UserModel registerUser(UserRequest userRequest) {
 
@@ -36,8 +40,7 @@ public class UserServiceImpl implements UserService {
         UserEntity userEntity = modelMapper.map(userRequest , UserEntity.class);
         userEntity.setUserId(UUID.randomUUID().toString());
         userEntity.setEncryptedPassword(bCryptPasswordEncoder.encode(userRequest.getPassword()));
-        userRepository.save(userEntity);
-
+        mongoTemplate.save(userEntity);
         UserModel userModel = modelMapper.map(userEntity , UserModel.class);
         return userModel;
     }

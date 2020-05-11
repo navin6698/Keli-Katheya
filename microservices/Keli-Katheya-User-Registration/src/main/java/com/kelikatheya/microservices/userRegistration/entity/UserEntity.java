@@ -1,31 +1,24 @@
 package com.kelikatheya.microservices.userRegistration.entity;
 
-import javax.persistence.*;
-import java.io.Serializable;
 
+import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.Document;
 
-@Entity
-@Table(name = "User")
-public class UserEntity implements Serializable {
+@Document
+public class UserEntity {
 
-    private static final long serialVersionUID = -5443144337747885152L;
     @Id
-    @GeneratedValue
-    private Long id; // DB id
-    @Column(nullable = false , length = 50)
+    private String id;
     private String name;
-    @Column(nullable = false , length = 100 , unique = true)
     private String email;
-    @Column(nullable = false , length = 100 , unique = true)
     private String userId;
-    @Column(nullable = false , length = 100 , unique = true)
     private String encryptedPassword;
 
-    public Long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(Long id) {
+    public void setId(String id) {
         this.id = id;
     }
 

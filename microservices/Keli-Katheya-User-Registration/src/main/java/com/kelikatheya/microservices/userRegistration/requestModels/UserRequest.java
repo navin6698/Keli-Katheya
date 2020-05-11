@@ -14,14 +14,14 @@ public class UserRequest {
     private String email;
 
     @NotNull(message = "password can't be empty")
-    @Size(min = 6 , max = 15 , message = "Password size should be between 5 and 15")
+    @Size(min = 6 , message = "Password size should be between 5 and 15")
     private String password;
 
     public String getName() {
         return name;
     }
 
-    public void settName(String name) {
+    public void setName(String name) {
         this.name = name;
     }
 
