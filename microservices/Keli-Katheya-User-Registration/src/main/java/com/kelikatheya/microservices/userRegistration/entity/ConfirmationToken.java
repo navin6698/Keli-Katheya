@@ -8,7 +8,7 @@ import java.util.UUID;
 public class ConfirmationToken {
 
     @Id
-    private long tokenid;
+    private String id;
     private String confirmationToken;
     private Date createdDate;
     private UserEntity user;
@@ -19,12 +19,12 @@ public class ConfirmationToken {
         confirmationToken = UUID.randomUUID().toString();
     }
 
-    public long getTokenid() {
-        return tokenid;
+    public String getId() {
+        return id;
     }
 
-    public void setTokenid(long tokenid) {
-        this.tokenid = tokenid;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getConfirmationToken() {
