@@ -13,6 +13,7 @@ public class UserEntity {
     private String email;
     private String userId;
     private String encryptedPassword;
+    private Boolean verifiedUser;
 
     public String getId() {
         return id;
@@ -52,5 +53,13 @@ public class UserEntity {
 
     public void setEncryptedPassword(String encryptedPassword) {
         this.encryptedPassword = encryptedPassword;
+    }
+
+    public Boolean getVerifiedUser() {
+        return verifiedUser;
+    }
+
+    public void setVerifiedUser(Boolean verifiedUser) {
+        this.verifiedUser = verifiedUser;
     }
 }
