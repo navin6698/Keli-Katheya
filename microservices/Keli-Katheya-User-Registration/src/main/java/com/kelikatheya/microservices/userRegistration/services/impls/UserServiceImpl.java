@@ -1,9 +1,6 @@
 package com.kelikatheya.microservices.userRegistration.services.impls;
 
-import com.kelikatheya.microservices.userRegistration.entity.ConfirmationToken;
-import com.kelikatheya.microservices.userRegistration.entity.ConfirmationTokenRepository;
-import com.kelikatheya.microservices.userRegistration.entity.UserEntity;
-import com.kelikatheya.microservices.userRegistration.entity.UserRepository;
+import com.kelikatheya.microservices.userRegistration.entity.*;
 import com.kelikatheya.microservices.userRegistration.model.UserModel;
 import com.kelikatheya.microservices.userRegistration.requestModels.UserRequest;
 import com.kelikatheya.microservices.userRegistration.services.EmailSenderService;
@@ -11,16 +8,19 @@ import com.kelikatheya.microservices.userRegistration.services.UserService;
 import org.modelmapper.ModelMapper;
 import org.modelmapper.convention.MatchingStrategies;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.MessageSource;
+import org.springframework.core.env.Environment;
 import org.springframework.data.mongodb.core.MongoTemplate;
 import org.springframework.mail.SimpleMailMessage;
+import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.security.core.userdetails.User;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.UUID;
+import javax.servlet.http.HttpServletRequest;
+import java.util.*;
 
 
 @Service
@@ -40,6 +40,18 @@ public class UserServiceImpl implements UserService {
 
     @Autowired
     private MongoTemplate mongoTemplate;
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
+    Environment env;
+
+    @Autowired
+    private MessageSource messages;
+
+    @Autowired
+    private JavaMailSender mailSender;
 
     @Override
     public UserModel registerUser(UserRequest userRequest) {
@@ -80,6 +92,7 @@ public class UserServiceImpl implements UserService {
         }
         return userEntity;
     }
+
     @Override
     public UserDetails loadUserByUsername(String userName) throws UsernameNotFoundException {
         UserEntity userEntity = userRepository.findByEmail(userName);
@@ -88,4 +101,72 @@ public class UserServiceImpl implements UserService {
         }
         return new User(userEntity.getEmail() , userEntity.getEncryptedPassword() , true , true ,true , true , new ArrayList<>());
     }
+
+    @Override
+    public void resetPasswordToken(HttpServletRequest request , String userEmail) {
+        UserEntity user = getUserDetailsByEmail(userEmail);
+        if (user == null) {
+            System.out.println("User not found");
+        }
+        String token = UUID.randomUUID().toString();
+        createPasswordResetTokenForUser(user, token);
+        mailSender.send(constructResetTokenEmail(getAppUrl(request),
+                request.getLocale(), token, user));
+    }
+
+    public void createPasswordResetTokenForUser(UserEntity user, String token) {
+        PasswordResetToken myToken = new PasswordResetToken(token, user);
+        passwordResetTokenRepository.save(myToken);
+    }
+    private SimpleMailMessage constructResetTokenEmail(
+            String contextPath, Locale locale, String token, UserEntity user) {
+        String url = contextPath + "/user/changePassword?token=" + token;
+        String message = messages.getMessage("message.resetPassword",
+                null, locale);
+        return constructEmail("Reset Password", message + " \r\n" + url, user);
+    }
+
+    private SimpleMailMessage constructEmail(String subject, String body,
+                                             UserEntity user) {
+        SimpleMailMessage email = new SimpleMailMessage();
+        email.setSubject(subject);
+        email.setText(body);
+        email.setTo(user.getEmail());
+        email.setFrom(env.getProperty("support.email"));
+        return email;
+    }
+
+    @Override
+    public String validatePasswordResetToken(String token) {
+        final PasswordResetToken passToken = passwordResetTokenRepository.findByToken(token);
+
+        return !isTokenFound(passToken) ? "invalidToken"
+                : isTokenExpired(passToken) ? "expired"
+                : null;
+    }
+
+    private boolean isTokenFound(PasswordResetToken passToken) {
+        return passToken != null;
+    }
+
+    private boolean isTokenExpired(PasswordResetToken passToken) {
+        final Calendar cal = Calendar.getInstance();
+        return passToken.getExpiryDate().before(cal.getTime());
+    }
+
+    @Override
+    public void changeUserPassword(UserEntity user, String password) {
+        user.setEncryptedPassword(bCryptPasswordEncoder.encode(password));
+        userRepository.save(user);
+    }
+
+    @Override
+    public Optional<UserEntity> getUserByPasswordResetToken(final String token) {
+        return Optional.ofNullable(passwordResetTokenRepository.findByToken(token) .getUser());
+    }
+
+    private String getAppUrl(HttpServletRequest request) {
+        return "http://" + request.getServerName() + ":" + request.getServerPort() + request.getContextPath();
+    }
+
 }
